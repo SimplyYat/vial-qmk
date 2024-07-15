@@ -1,4 +1,5 @@
 #include QMK_KEYBOARD_H
+#include "custom_rgb.h"
 
 #define _DVORAK 0
 #define _ACTIONS 1
@@ -61,118 +62,26 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 void keyboard_post_init_user(void) {
-#ifdef CONSOLE_ENABLE
-    debug_enable=true;
-    debug_matrix=true;
-    debug_keyboard=true;
-    debug_mouse=true;
-#else
-    debug_enable=false;
-    debug_matrix=false;
-    debug_keyboard=false;
-    debug_mouse=false;
-#endif
-}
-
-void set_colour(uint8_t led_index, uint16_t hue, uint8_t sat, uint8_t val){
-    uint8_t brightness = val;
-    if (val > rgb_matrix_get_val()) {
-        brightness = rgb_matrix_get_val();
-    }
-    HSV hsv = (HSV){hue, sat, brightness};
-    RGB rgb = hsv_to_rgb(hsv);
-    rgb_matrix_set_color(led_index, rgb.r, rgb.g, rgb.b);
+// #ifdef RGB_MATRIX_ENABLE
+//     rgb_matrix_mode(RGB_MATRIX_CUSTOM_custom_solid_colours);
+// #endif  // RGB_MATRIX_ENABLE
 }
 
 // Custom RGB indicator behaviour:
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
-    uint8_t led_processed_count = 0;
-    //uint8_t brightness = rgb_matrix_config.hsv.v;
-
-    for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
-        for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
-            if (led_processed_count == RGB_MATRIX_LED_PROCESS_LIMIT){
-                return false;
-            }
-            uint8_t led_index = g_led_config.matrix_co[row][col];
-            uint16_t keycode = keymap_key_to_keycode(0, (keypos_t){col,row});
-            if (led_index >= led_min && led_index <= led_max && led_index != NO_LED) {
-                led_processed_count++;
-
-                switch (keycode)
-                {
-                    case KC_CAPS_LOCK:
-                        set_colour(led_index, HSV_GREEN);
-                        break;
-                    case KC_A ... KC_Z:
-                        if(host_keyboard_led_state().caps_lock){
-                            set_colour(led_index, HSV_RED);
-                        }
-                        else{
-                            set_colour(led_index, HSV_BLUE);
-                        }
-                        break;
-                    case KC_ENTER:
-                        set_colour(led_index, HSV_MAGENTA);
-                        break;
-                    case KC_BACKSPACE:
-                    case KC_DELETE:
-                    case QK_BOOTLOADER:
-                        set_colour(led_index, HSV_RED);
-                        break;
-                    case KC_TAB ... KC_SLASH:
-                    case MODIFIER_KEYCODE_RANGE:
-                        set_colour(led_index, HSV_GOLD);
-                        break;
-                    case QK_TAP_DANCE ... QK_TAP_DANCE_MAX:
-                    case QK_LAYER_TAP ... QK_LAYER_TAP_MAX:
-                    case QK_LAYER_TAP_TOGGLE ... QK_LAYER_TAP_TOGGLE_MAX:
-                    case QK_MOMENTARY ... QK_MOMENTARY_MAX:
-                    case QK_MOD_TAP ... QK_MOD_TAP_MAX:
-                    case MAGIC_KEYCODE_RANGE:
-                        set_colour(led_index, HSV_PURPLE);
-                        break;
-                    default:
-                        //set_colour(led_index, base_colour.r, base_colour.g, base_colour.b);
-                        break;
-                }
-
-                // Whenever a layer above base is active, recolour only the keys that are different on that layer:
-                if (get_highest_layer(layer_state) > 0) {
-                    uint8_t layer = get_highest_layer(layer_state);
-                    uint16_t momentary_keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
-                    if (momentary_keycode > KC_TRNS) {
-                        // The middle layer is green, except that the numpad section turns
-                        // orange when Num Lock is on:
-                        if (host_keyboard_led_state().num_lock &&
-                        (momentary_keycode == KC_KP_EQUAL ||
-                        (momentary_keycode >= KC_NUM_LOCK && momentary_keycode <= KC_KP_DOT)
-                        )) {
-                            if(momentary_keycode == KC_NUM_LOCK){
-                                set_colour(led_index,  HSV_GREEN);
-                            }
-                            else
-                            {
-                                set_colour(led_index, HSV_PURPLE);
-                            }
-                        } else {
-                            set_colour(led_index, HSV_BLUE);
-                        }
-                        // Light arrow keys orange if Scroll Lock is on, otherwise light them purple:
-                        if (momentary_keycode >= KC_RIGHT && momentary_keycode <= KC_UP) {
-                            if (host_keyboard_led_state().scroll_lock) {
-                                set_colour(led_index, HSV_ORANGE);
-                            } else {
-                                set_colour(led_index, HSV_PURPLE);
-                            }
-                        }
-                    }
-                    else{
-                        set_colour(led_index, HSV_OFF);
-                    }
-                }
-            }
-        }
+    if(get_highest_layer(layer_state) > 0){
+        set_active_layer_colours(led_min, led_max);
+    }
+    else{
+        set_base_layer_colours(led_min, led_max);
     }
     return false;
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    RGB_MATRIX_USE_LIMITS(led_min, led_max);
+    if (get_highest_layer(state) == 0)
+    {
+        set_base_layer_colours(led_min, led_max);
+    }
 }
