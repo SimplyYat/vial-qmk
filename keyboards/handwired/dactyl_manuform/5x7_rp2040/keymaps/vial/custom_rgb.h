@@ -1,6 +1,7 @@
+#pragma once
+
 #include QMK_KEYBOARD_H
 //#include "dynamic_keymap.h"
-#define CUSTOM_RGB_H
 
 void set_colour(uint8_t led_index, uint16_t hue, uint8_t sat, uint8_t val){
     uint8_t brightness = val;
@@ -70,7 +71,7 @@ void set_active_layer_colours(uint8_t led_min, uint8_t led_max){
     uint8_t led_processed_count = 0;
 
     //Turn off the whole board before colouring the active keys.
-    rgb_matrix_sethsv_noeeprom(HSV_OFF);
+    rgb_matrix_mode(RGB_MATRIX_CUSTOM_SOLID_BLACK);
 
     for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
         for (uint8_t col = 0; col < MATRIX_COLS; ++col) {

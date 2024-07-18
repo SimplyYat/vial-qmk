@@ -1,5 +1,4 @@
 #include QMK_KEYBOARD_H
-#include "custom_rgb.h"
 
 #define _DVORAK 0
 #define _ACTIONS 1
@@ -62,26 +61,20 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 void keyboard_post_init_user(void) {
-// #ifdef RGB_MATRIX_ENABLE
-//     rgb_matrix_mode(RGB_MATRIX_CUSTOM_custom_solid_colours);
-// #endif  // RGB_MATRIX_ENABLE
+    #ifdef RGB_MATRIX_ENABLE
+        rgb_matrix_mode(RGB_MATRIX_CUSTOM_CUSTOM_SOLID_COLOURS);
+    #endif  // RGB_MATRIX_ENABLE
 }
 
 // Custom RGB indicator behaviour:
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
-    if(get_highest_layer(layer_state) > 0){
-        set_active_layer_colours(led_min, led_max);
-    }
-    else{
-        set_base_layer_colours(led_min, led_max);
-    }
+    rgb_matrix_mode(RGB_MATRIX_CUSTOM_CUSTOM_SOLID_COLOURS);
     return false;
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-    RGB_MATRIX_USE_LIMITS(led_min, led_max);
-    if (get_highest_layer(state) == 0)
-    {
-        set_base_layer_colours(led_min, led_max);
-    }
+    #ifdef RGB_MATRIX_ENABLE
+        rgb_matrix_mode(RGB_MATRIX_CUSTOM_CUSTOM_SOLID_COLOURS);
+    #endif
+    return state;
 }
