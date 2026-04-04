@@ -330,8 +330,28 @@ void vial_handle_cmd(uint8_t *msg, uint8_t length) {
 
 uint16_t g_vial_magic_keycode_override;
 
+uint16_t vial_apply_magic_swap(uint16_t keycode) {
+    if (keycode >= QK_MODS && keycode <= QK_MODS_MAX) {
+        uint8_t mods = QK_MODS_GET_MODS(keycode);
+        uint8_t basic_keycode = QK_MOD_TAP_GET_TAP_KEYCODE(keycode);
+        return (keycode & 0xE000) | ((uint16_t)mod_config(mods) << 8) | keycode_config(basic_keycode);
+    } else if (keycode >= QK_MOD_TAP && keycode <= QK_MOD_TAP_MAX) {
+        uint8_t mods = QK_MOD_TAP_GET_MODS(keycode);
+        uint8_t basic_keycode = QK_MOD_TAP_GET_TAP_KEYCODE(keycode);
+        return (keycode & 0xE000) | ((uint16_t)mod_config(mods) << 8) | keycode_config(basic_keycode);
+    } else if (keycode >= QK_LAYER_MOD && keycode <= QK_LAYER_MOD_MAX) {
+        uint8_t mods  = QK_LAYER_MOD_GET_MODS(keycode);
+        uint8_t layer = QK_LAYER_MOD_GET_LAYER(keycode);
+        return QK_LAYER_MOD | ((uint16_t)layer << 5) | mod_config(mods);
+    } else if (keycode >= QK_ONE_SHOT_MOD && keycode <= QK_ONE_SHOT_MOD_MAX) {
+        uint8_t mods = QK_ONE_SHOT_MOD_GET_MODS(keycode);
+        return QK_ONE_SHOT_MOD | mod_config(mods);
+    }
+    return keycode_config(keycode);
+}
+
 void vial_keycode_down(uint16_t keycode) {
-    keycode = keycode_config(keycode);
+    keycode = vial_apply_magic_swap(keycode);
     g_vial_magic_keycode_override = keycode;
 
     if (keycode <= QK_MODS_MAX) {
@@ -345,7 +365,7 @@ void vial_keycode_down(uint16_t keycode) {
 }
 
 void vial_keycode_up(uint16_t keycode) {
-    keycode = keycode_config(keycode);
+    keycode = vial_apply_magic_swap(keycode);
     g_vial_magic_keycode_override = keycode;
 
     if (keycode <= QK_MODS_MAX) {
