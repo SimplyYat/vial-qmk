@@ -6,6 +6,10 @@ A 5x7 Dactyl Manuform using 2 x RP2040 controllers (1 for each half).
 * Hardware Supported: This keyboard should support with most versions of RP2040. You can handwire the diodes directly to keyswitches, use individual key PCBs like [Amoeba Royale](https://github.com/climent/keyboard-pcbs/tree/master/amoeba-royale), or [Amoeba King](https://github.com/climent/keyboard-pcbs/tree/king_v1.2/amoeba-king), or use flexible PCBs like [this one from BastardKB](https://github.com/Bastardkb/Dactyl-Manuform-PCB-Plate) or [this one](https://oshwlab.com/simplyyat/dm-5-row-smt). There might be a lot more options available on various ecommerce websites.
 * Hardware Availability: I built mine with a generic Purple RP2040 from Aliexpress, but you can choose whichever one you prefer.
 
+## Known problems
+
+The default vial layout is not working as expected. The keys are not in the correct positions. This is probably due to the ordering of the layout in keyboard.json vs keymap.c arrangement, which might need correcting, but the layouts are working fine using Vial, so not an urgent problem.
+
 ## Building the firmware
 
 > These commands will need to be run in QMK MSYS terminal, not in a Windows Powershell terminal.
