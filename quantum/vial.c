@@ -23,6 +23,7 @@
 #include "vial_generated_keyboard_definition.h"
 
 #include "vial_ensure_keycode.h"
+#include "keycode_config.h"
 
 #define VIAL_UNLOCK_COUNTER_MAX 50
 
@@ -330,6 +331,7 @@ void vial_handle_cmd(uint8_t *msg, uint8_t length) {
 uint16_t g_vial_magic_keycode_override;
 
 void vial_keycode_down(uint16_t keycode) {
+    keycode = keycode_config(keycode);
     g_vial_magic_keycode_override = keycode;
 
     if (keycode <= QK_MODS_MAX) {
@@ -343,6 +345,7 @@ void vial_keycode_down(uint16_t keycode) {
 }
 
 void vial_keycode_up(uint16_t keycode) {
+    keycode = keycode_config(keycode);
     g_vial_magic_keycode_override = keycode;
 
     if (keycode <= QK_MODS_MAX) {
