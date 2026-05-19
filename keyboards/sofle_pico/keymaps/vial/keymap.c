@@ -109,3 +109,97 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
     [3] = {ENCODER_CCW_CW(_______, _______)},
 };
 #endif
+
+#ifdef OLED_ENABLE
+#include "dynamic_keymap.h"
+
+static uint8_t oled_current_mode = 0; // 0 = logo, 1 = typing
+
+static void oled_write_keycode(uint16_t keycode) {
+    switch (keycode) {
+        case KC_VOLD: oled_write_P(PSTR("Vol-"), false); break;
+        case KC_VOLU: oled_write_P(PSTR("Vol+"), false); break;
+        case KC_PGUP: oled_write_P(PSTR("PgUp"), false); break;
+        case KC_PGDN: oled_write_P(PSTR("PgDn"), false); break;
+        case KC_MNXT: oled_write_P(PSTR("Next"), false); break;
+        case KC_MPRV: oled_write_P(PSTR("Prev"), false); break;
+        case KC_MUTE: oled_write_P(PSTR("Mute"), false); break;
+        case KC_UP:   oled_write_P(PSTR("Up  "), false); break;
+        case KC_DOWN: oled_write_P(PSTR("Down"), false); break;
+        case KC_MS_WH_UP: oled_write_P(PSTR("ScrU"), false); break;
+        case KC_MS_WH_DOWN: oled_write_P(PSTR("ScrD"), false); break;
+        case KC_TAB:  oled_write_P(PSTR("Tab "), false); break;
+        case LSFT(KC_TAB): oled_write_P(PSTR("STab"), false); break;
+        case KC_TRNS:
+        case KC_NO:   oled_write_P(PSTR("None"), false); break;
+        default:      oled_write_P(PSTR("??? "), false); break;
+    }
+}
+
+bool oled_task_user(void) {
+    if (last_input_activity_elapsed() < 10000) {
+        if (oled_current_mode == 0) {
+            oled_clear();
+            oled_current_mode = 1;
+        }
+
+        // Layer Status
+        oled_set_cursor(0, 1);
+        oled_write_P(PSTR("Layer:\n"), false);
+        switch (get_highest_layer(layer_state)) {
+            case _QWERTY: oled_write_P(PSTR("BASE    \n"), false); break;
+            case _LOWER:  oled_write_P(PSTR("FUNCTION\n"), false); break;
+            case _RAISE:  oled_write_P(PSTR("ACTIONS \n"), false); break;
+            case _ADJUST: oled_write_P(PSTR("SYSTEM  \n"), false); break;
+            default:      oled_write_P(PSTR("UNKNOWN \n"), false); break;
+        }
+
+        // Encoder Status
+        oled_set_cursor(0, 6);
+        oled_write_P(PSTR("Encoder:\n"), false);
+
+        uint16_t ccw = KC_TRNS;
+        uint16_t cw = KC_TRNS;
+        uint8_t enc_idx = is_keyboard_left() ? 0 : 1;
+        for (int i = 3; i >= 0; i--) {
+            if ((layer_state & (1UL << i)) || i == 0) {
+                if (ccw == KC_TRNS) ccw = dynamic_keymap_get_encoder(i, enc_idx, false);
+                if (cw == KC_TRNS) cw = dynamic_keymap_get_encoder(i, enc_idx, true);
+            }
+        }
+
+        if (ccw == KC_TRNS && cw == KC_TRNS) {
+            oled_write_P(PSTR("None      \n"), false);
+        } else {
+            oled_write_keycode(ccw);
+            oled_write_P(PSTR("/"), false);
+            oled_write_keycode(cw);
+            oled_write_P(PSTR(" \n"), false); // space padding to 10 chars
+        }
+
+        // Modifiers Status
+        oled_set_cursor(0, 11);
+        oled_write_P(PSTR("Mods:\n"), false);
+        uint8_t mods = get_mods();
+        char mod_str[11] = "          "; // 10 spaces
+        if (mods & MOD_MASK_SHIFT) { mod_str[0]='S'; mod_str[1]='f'; mod_str[2]='t'; }
+        if (mods & MOD_MASK_CTRL)  { mod_str[4]='C'; mod_str[5]='t'; mod_str[6]='l'; }
+
+        char mod_str2[11] = "          "; // 10 spaces
+        if (mods & MOD_MASK_ALT)   { mod_str2[0]='A'; mod_str2[1]='l'; mod_str2[2]='t'; }
+        if (mods & MOD_MASK_GUI)   { mod_str2[4]='G'; mod_str2[5]='u'; mod_str2[6]='i'; }
+
+        oled_write(mod_str, false);
+        oled_write_P(PSTR("\n"), false);
+        oled_write(mod_str2, false);
+
+        return false;
+    } else {
+        if (oled_current_mode == 1) {
+            oled_clear();
+            oled_current_mode = 0;
+        }
+        return true;
+    }
+}
+#endif
