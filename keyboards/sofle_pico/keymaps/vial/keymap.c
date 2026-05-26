@@ -165,6 +165,8 @@ void housekeeping_task_user(void) {
 #endif
 
 static uint8_t oled_current_mode = 0; // 0 = logo, 1 = typing
+static bool oled_was_on = false;
+static uint32_t wake_timer = 0;
 
 static void oled_write_key(uint8_t key) {
     if (key >= KC_A && key <= KC_Z) {
@@ -227,7 +229,21 @@ static void oled_write_keycode(uint16_t keycode) {
 }
 
 bool oled_task_user(void) {
-    if (last_input_activity_elapsed() < 10000 || get_current_wpm() > 0) {
+    bool oled_on = is_oled_on();
+    if (oled_on && !oled_was_on) {
+        wake_timer = timer_read32();
+    }
+    oled_was_on = oled_on;
+
+    if (timer_elapsed32(wake_timer) < OLED_LOGO_DURATION) {
+        if (oled_current_mode == 1) {
+            oled_clear();
+            oled_current_mode = 0;
+        }
+        return true;
+    }
+
+    if (last_input_activity_elapsed() < OLED_STATUS_TIMEOUT || get_current_wpm() > 0) {
         if (oled_current_mode == 0) {
             oled_clear();
             oled_current_mode = 1;
