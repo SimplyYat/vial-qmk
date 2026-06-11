@@ -2,6 +2,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include QMK_KEYBOARD_H
+#include "dynamic_keymap.h"
+#include "caps_word.h"
+
+#ifdef SPLIT_KEYBOARD
+#include "transactions.h"
+#endif
 
 enum sofle_layers {
     _QWERTY,
@@ -110,19 +116,20 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
 };
 #endif
 
-#ifdef OLED_ENABLE
-#include "dynamic_keymap.h"
-#include "caps_word.h"
-#include "transactions.h"
-
 #ifdef SPLIT_KEYBOARD
 typedef struct {
     bool caps_word_on;
     uint16_t ccw_encoder;
     uint16_t cw_encoder;
+    uint64_t led_mask;
 } user_sync_state_t;
 
-user_sync_state_t user_state;
+user_sync_state_t user_state = {
+    .caps_word_on = false,
+    .ccw_encoder = KC_TRNS,
+    .cw_encoder = KC_TRNS,
+    .led_mask = 0xFFFFFFFFFFFFFFFFULL
+};
 
 void user_sync_callback(uint8_t initiator2target_buffer_size, const void *initiator2target_buffer, uint8_t target2initiator_buffer_size, void *target2initiator_buffer) {
     if (initiator2target_buffer_size == sizeof(user_sync_state_t)) {
@@ -134,6 +141,26 @@ void keyboard_post_init_user(void) {
     if (!is_keyboard_master()) {
         transaction_register_rpc(USER_SYNC_STATE, user_sync_callback);
     }
+}
+
+uint64_t calculate_led_mask(void) {
+    uint8_t layer = get_highest_layer(layer_state);
+    if (layer == 0) {
+        return 0xFFFFFFFFFFFFFFFFULL;
+    }
+    uint64_t mask = 0;
+    for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
+        for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
+            uint8_t index = g_led_config.matrix_co[row][col];
+            if (index != NO_LED && index < 64) {
+                uint16_t keycode = dynamic_keymap_get_keycode(layer, row, col);
+                if (keycode != KC_TRNS && keycode != KC_NO) {
+                    mask |= (1ULL << index);
+                }
+            }
+        }
+    }
+    return mask;
 }
 
 void housekeeping_task_user(void) {
@@ -153,6 +180,7 @@ void housekeeping_task_user(void) {
         }
         new_state.ccw_encoder = ccw;
         new_state.cw_encoder = cw;
+        new_state.led_mask = calculate_led_mask();
 
         static user_sync_state_t last_user_state = {0};
         if (memcmp(&new_state, &last_user_state, sizeof(user_sync_state_t)) != 0) {
@@ -162,7 +190,29 @@ void housekeeping_task_user(void) {
         }
     }
 }
+#else
+uint64_t calculate_led_mask(void) {
+    uint8_t layer = get_highest_layer(layer_state);
+    if (layer == 0) {
+        return 0xFFFFFFFFFFFFFFFFULL;
+    }
+    uint64_t mask = 0;
+    for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
+        for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
+            uint8_t index = g_led_config.matrix_co[row][col];
+            if (index != NO_LED && index < 64) {
+                uint16_t keycode = dynamic_keymap_get_keycode(layer, row, col);
+                if (keycode != KC_TRNS && keycode != KC_NO) {
+                    mask |= (1ULL << index);
+                }
+            }
+        }
+    }
+    return mask;
+}
 #endif
+
+#ifdef OLED_ENABLE
 
 static uint8_t oled_current_mode = 0; // 0 = logo, 1 = typing
 static bool oled_was_on = false;
@@ -350,3 +400,23 @@ bool oled_task_user(void) {
     }
 }
 #endif
+
+bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    uint64_t mask;
+#ifdef SPLIT_KEYBOARD
+    if (is_keyboard_master()) {
+        mask = calculate_led_mask();
+    } else {
+        mask = user_state.led_mask;
+    }
+#else
+    mask = calculate_led_mask();
+#endif
+
+    for (uint8_t i = led_min; i < led_max; i++) {
+        if (!(mask & (1ULL << i))) {
+            rgb_matrix_set_color(i, 0, 0, 0);
+        }
+    }
+    return false;
+}
