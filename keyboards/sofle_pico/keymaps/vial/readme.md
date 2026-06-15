@@ -36,6 +36,8 @@ The keymap classifies keycodes into distinct groups, each mapped to a harmonious
 | **Delete / Backspace** | Red | `(255, 0, 0)` | `KC_DEL` and `KC_BSPC` |
 | **Enter** | Gold / Amber | `(255, 90, 0)` | Enter keys (adjusted for green hardware LED bias) |
 | **Arrow, Space, Tab** | Pure White | `(255, 255, 255)` | Directional arrows, space bar, and tab key |
+| **Function Keys** | Bright Teal / Mint | `(0, 255, 128)` | Standard function keys (`KC_F1` to `KC_F24`) |
+| **Danger / Reset Keys** | Blinking Red | `(255, 0, 0)` / Off | Bootloader (`QK_BOOT`) and EEPROM Clear (`EE_CLR`) keys (blinks at 2Hz) |
 | **Other** | Lavender | `(200, 160, 255)` | Any other keys / fallback |
 
 ### Special Keys (Hold-Tap, Tap-Dance, and Blends)
@@ -44,7 +46,7 @@ To distinguish dual-function keys, the keymap uses special colors and color blen
 
 * **Hold-Tap / Mod-Tap (`LT`, `MT`)**:
   - **Standard**: Light Pink `(255, 0, 127)`
-  - **Blended**: If the primary tap action is a letter, number, or symbol, the color blends **75%** of the tap character's color with **25%** of the Hold-Tap pink.
+  - **Blended**: If the primary tap action is a letter, number, symbol, or function key, the color blends **75%** of the tap character's color with **25%** of the Hold-Tap pink.
 * **Tap-Dance**:
   - **Standard**: Magenta `(255, 0, 255)`
-  - **Blended**: If the primary tap action is a letter, number, or symbol, the color blends **75%** of the tap character's color with **25%** of the Tap-Dance magenta.
+  - **Blended**: If the primary tap action is a letter, number, symbol, or function key, the color blends **75%** of the tap character's color with **25%** of the Tap-Dance magenta.

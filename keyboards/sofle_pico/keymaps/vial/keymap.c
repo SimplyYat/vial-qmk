@@ -36,6 +36,8 @@ user_sync_state_t user_state = {
 #define COLOR_LAYER           (rgb_t){75, 0, 130}    // Indigo/Deep Violet
 #define COLOR_OTHER           (rgb_t){200, 160, 255} // Lavender
 #define COLOR_ARROW           (rgb_t){255, 255, 255} // Pure White (arrow keys, space, tab)
+#define COLOR_DANGER          (rgb_t){255, 0, 0}     // Bright Red (Bootloader / EEPROM Reset)
+#define COLOR_FUNCTION        (rgb_t){0, 255, 128}   // Bright Teal / Mint (Function keys)
 
 bool is_caps_active(void) {
     bool caps_word_on = false;
@@ -76,6 +78,9 @@ uint8_t get_hold_tap_color_index(uint16_t keycode, bool caps_active) {
         if (base == KC_LEFT || base == KC_DOWN || base == KC_UP || base == KC_RGHT || base == KC_SPC || base == KC_TAB) {
             return 21; // Hold-tap + Arrow/Space/Tab
         }
+        if ((base >= KC_F1 && base <= KC_F12) || (base >= KC_F13 && base <= KC_F24)) {
+            return 25; // Hold-tap + Function key
+        }
         if (IS_QK_MODS(tap_kc) && (QK_MODS_GET_MODS(tap_kc) & MOD_MASK_SHIFT)) {
             uint16_t basic = QK_MODS_GET_BASIC_KEYCODE(tap_kc);
             if ((basic >= KC_1 && basic <= KC_0) || (basic >= KC_MINUS && basic <= KC_SLASH) || basic == KC_NONUS_HASH || basic == KC_GRAVE) {
@@ -109,6 +114,9 @@ uint8_t get_tap_dance_color_index(uint16_t keycode, bool caps_active) {
             if (base == KC_LEFT || base == KC_DOWN || base == KC_UP || base == KC_RGHT || base == KC_SPC || base == KC_TAB) {
                 return 22; // Tap-dance + Arrow/Space/Tab
             }
+            if ((base >= KC_F1 && base <= KC_F12) || (base >= KC_F13 && base <= KC_F24)) {
+                return 26; // Tap-dance + Function key
+            }
             if (IS_QK_MODS(tap_kc) && (QK_MODS_GET_MODS(tap_kc) & MOD_MASK_SHIFT)) {
                 uint16_t basic = QK_MODS_GET_BASIC_KEYCODE(tap_kc);
                 if ((basic >= KC_1 && basic <= KC_0) || (basic >= KC_MINUS && basic <= KC_SLASH) || basic == KC_NONUS_HASH || basic == KC_GRAVE) {
@@ -124,6 +132,9 @@ uint8_t get_tap_dance_color_index(uint16_t keycode, bool caps_active) {
 uint8_t get_color_index(uint16_t keycode, bool caps_active, bool is_base_layer) {
     if (!is_base_layer && (keycode == KC_TRNS || keycode == KC_NO)) {
         return 0; // Off
+    }
+    if (keycode == QK_BOOT || keycode == EE_CLR) {
+        return 23; // Blinking Danger Red
     }
     if (keycode == KC_TRNS || keycode == KC_NO) {
         return 11; // Other
@@ -159,6 +170,9 @@ uint8_t get_color_index(uint16_t keycode, bool caps_active, bool is_base_layer) 
     }
     if (base == KC_ENT || base == KC_KP_ENTER) {
         return 9; // Enter
+    }
+    if ((base >= KC_F1 && base <= KC_F12) || (base >= KC_F13 && base <= KC_F24)) {
+        return 24; // Function keys
     }
     if ((base >= KC_1 && base <= KC_0) || (base >= KC_KP_1 && base <= KC_KP_0)) {
         return 7; // Number
@@ -239,6 +253,25 @@ rgb_t get_color_from_index(uint8_t color_idx) {
         }
         case 22: {
             rgb_t base = COLOR_ARROW;
+            rgb_t effect = COLOR_TAP_DANCE;
+            return (rgb_t){(3 * base.r + effect.r) / 4, (3 * base.g + effect.g) / 4, (3 * base.b + effect.b) / 4};
+        }
+        case 23: {
+            // Blinking red (250ms on, 250ms off)
+            if ((timer_read32() / 250) % 2 == 0) {
+                return COLOR_DANGER;
+            } else {
+                return (rgb_t){0, 0, 0};
+            }
+        }
+        case 24: return COLOR_FUNCTION;
+        case 25: {
+            rgb_t base = COLOR_FUNCTION;
+            rgb_t effect = COLOR_HOLD_TAP;
+            return (rgb_t){(3 * base.r + effect.r) / 4, (3 * base.g + effect.g) / 4, (3 * base.b + effect.b) / 4};
+        }
+        case 26: {
+            rgb_t base = COLOR_FUNCTION;
             rgb_t effect = COLOR_TAP_DANCE;
             return (rgb_t){(3 * base.r + effect.r) / 4, (3 * base.g + effect.g) / 4, (3 * base.b + effect.b) / 4};
         }
