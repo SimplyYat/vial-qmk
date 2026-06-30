@@ -21,3 +21,12 @@
 #define ENCODER_MAP_KEY_DELAY 10
 
 #define RGB_MATRIX_TYPING_HEATMAP_DECREASE_DELAY_MS 50
+
+/* RP2040- and hardware-specific config */
+#define RP2040_BOOTLOADER_DOUBLE_TAP_RESET
+#define RP2040_BOOTLOADER_DOUBLE_TAP_RESET_TIMEOUT 500U
+#define PICO_XOSC_STARTUP_DELAY_MULTIPLIER 64
+
+/* Delay USB wakeup to improve compatibility on Mac startup/wake */
+#define USB_SUSPEND_WAKEUP_DELAY 200
+
